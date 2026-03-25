@@ -11,7 +11,7 @@ const bookingSchema = z.object({
   guests: z.number().min(1),
   totalPrice: z.number().min(0),
   guestName: z.string().optional(),
-  guestEmail: z.string().email().optional(),
+  guestEmail: z.string().email().optional().or(z.literal("")).optional(),
   guestPhone: z.string().optional(),
   specialRequests: z.string().optional(),
 });
@@ -35,8 +35,9 @@ export async function GET(req: NextRequest) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        room: { select: { name: true, images: true, price: true } },
+        room: { select: { id: true, name: true, images: true, price: true } },
         user: { select: { name: true, email: true } },
+        review: { select: { id: true, rating: true, comment: true, adminReply: true, adminRepliedAt: true } },
       },
       orderBy: { createdAt: "desc" },
     });

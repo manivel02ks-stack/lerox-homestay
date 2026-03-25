@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import cloudinary from "@/lib/cloudinary";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,23 +37,23 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const extension = file.name.split(".").pop() || "jpg";
-    const filename = `${timestamp}-${Math.random().toString(36).slice(2)}.${extension}`;
+    // Upload to Cloudinary
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: "lerox-homestay",
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
 
-    // Ensure uploads directory exists
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Save file
-    const filepath = join(uploadsDir, filename);
-    await writeFile(filepath, buffer);
-
-    const url = `/uploads/${filename}`;
-    return NextResponse.json({ url });
+    return NextResponse.json({ url: result.secure_url });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

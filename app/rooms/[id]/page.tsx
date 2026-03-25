@@ -47,6 +47,16 @@ interface Room {
   isActive: boolean;
 }
 
+interface Review {
+  id: string;
+  guestName: string;
+  rating: number;
+  comment: string;
+  adminReply: string | null;
+  adminRepliedAt: string | null;
+  createdAt: string;
+}
+
 export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -57,6 +67,7 @@ export default function RoomDetailPage() {
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("1");
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     fetchRoom();
@@ -64,13 +75,15 @@ export default function RoomDetailPage() {
 
   async function fetchRoom() {
     try {
-      const res = await fetch(`/api/rooms/${params.id}`);
-      if (!res.ok) {
-        router.push("/rooms");
-        return;
-      }
-      const data = await res.json();
-      setRoom(data.room);
+      const [roomRes, reviewsRes] = await Promise.all([
+        fetch(`/api/rooms/${params.id}`),
+        fetch(`/api/rooms/${params.id}/reviews`),
+      ]);
+      if (!roomRes.ok) { router.push("/rooms"); return; }
+      const roomData    = await roomRes.json();
+      const reviewsData = await reviewsRes.json();
+      setRoom(roomData.room);
+      setReviews(reviewsData.reviews || []);
     } catch (error) {
       router.push("/rooms");
     } finally {
@@ -241,10 +254,12 @@ export default function RoomDetailPage() {
             <div>
               <div className="flex items-start justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">{room.name}</h1>
-                <div className="flex items-center gap-1 text-sm bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span>4.9</span>
-                </div>
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-1 text-sm bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span>{(reviews.reduce((s,r) => s + r.rating, 0) / reviews.length).toFixed(1)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 mt-2 text-gray-500">
                 <div className="flex items-center gap-1">
@@ -298,6 +313,64 @@ export default function RoomDetailPage() {
                 />
               </div>
             </div>
+
+            <Separator />
+
+            {/* Reviews */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                  Guest Reviews
+                  {reviews.length > 0 && (
+                    <span className="ml-2 text-base font-normal text-gray-500">({reviews.length})</span>
+                  )}
+                </h2>
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-1 text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-semibold">
+                      {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {reviews.length === 0 ? (
+                <p className="text-gray-400 text-sm py-4">No reviews yet — be the first to review!</p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-medium text-sm text-gray-900">{review.guestName}</span>
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map((s) => (
+                            <Star key={s} className={`h-3.5 w-3.5 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {format(new Date(review.createdAt), "dd MMM yyyy")}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                      {review.adminReply && (
+                        <div className="mt-3 ml-4 border-l-2 border-blue-300 pl-3 py-1 bg-blue-50 rounded-r-lg">
+                          <p className="text-xs font-semibold text-blue-700 mb-1">
+                            Response from Le Rox Home-Stay
+                            {review.adminRepliedAt && (
+                              <span className="font-normal text-blue-400 ml-1">
+                                · {format(new Date(review.adminRepliedAt), "dd MMM yyyy")}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-blue-800">{review.adminReply}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Booking Widget */}
@@ -312,7 +385,10 @@ export default function RoomDetailPage() {
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span>4.9 • 200+ reviews</span>
+                  {reviews.length > 0
+                    ? <span>{(reviews.reduce((s,r) => s + r.rating, 0) / reviews.length).toFixed(1)} · {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
+                    : <span>No reviews yet</span>
+                  }
                 </div>
               </CardHeader>
 

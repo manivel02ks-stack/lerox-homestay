@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, AlertCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -194,6 +194,11 @@ export default function AdminRoomsPage() {
                           ) : (
                             <ToggleLeft className="h-5 w-5 text-gray-400" />
                           )}
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild title="Reviews">
+                          <Link href={`/admin/rooms/${room.id}/reviews`}>
+                            <MessageSquare className="h-4 w-4 text-purple-500" />
+                          </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/admin/rooms/${room.id}/edit`}>

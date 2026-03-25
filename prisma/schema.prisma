@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -75,6 +76,7 @@ model Room {
 
   bookings     Booking[]
   blockedDates BlockedDate[]
+  reviews      Review[]
 }
 
 model Booking {
@@ -96,8 +98,25 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room   Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review?
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  roomId    String
+  bookingId String?  @unique
+  guestName String
+  rating    Int
+  comment   String   @db.Text
+  isVisible      Boolean   @default(true)
+  adminReply     String?   @db.Text
+  adminRepliedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  room    Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 }
 
 model BlockedDate {

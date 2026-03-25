@@ -13,6 +13,7 @@ import {
   Hotel,
   ChevronRight,
   Settings,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,11 @@ const navItems = [
     title: "Blocked Dates",
     href: "/admin/blocked-dates",
     icon: CalendarX,
+  },
+  {
+    title: "Reviews",
+    href: "/admin/reviews",
+    icon: MessageSquare,
   },
   {
     title: "Settings",
